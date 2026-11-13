@@ -242,7 +242,7 @@ app.post('/api/actualizar-km', async (req, res) => {
                     'content-type': 'application/json'
                 },
                 body: JSON.stringify({
-                    sender: { name: 'MotoCare Alertas', email: 'andresfe.quinonesor@ecci.edu.co' },
+                    sender: { name: 'MotoCare Alertas', email: 'motocare708@gmail.com' },
                     to: [{ email: vehiculo.correo }],
                     subject: `Telemetría MotoCare: Alerta Mantenimiento - Placa: ${vehiculo.placa}`,
                     htmlContent: correoHtml
