@@ -3,21 +3,83 @@ const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
 const nodemailer = require('nodemailer');
+const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-const path = require('path');
+
 // Servir los archivos estáticos del frontend (index.html, app.js, styles.css)
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// 1. Conexión a tu base de datos MySQL local
+// 1. Conexión a la base de datos MySQL (Local o Nube Aiven con SSL)
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
+    port: process.env.DB_PORT || 3306,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
+    database: process.env.DB_NAME,
+    ssl: process.env.DB_PORT && process.env.DB_PORT !== '3306' ? { rejectUnauthorized: false } : undefined,
+    waitForConnections: true,
+    connectionLimit: 10
 });
+
+// Inicializar tablas automáticamente en la nube si no existen
+async function initDB() {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(100) NOT NULL,
+                correo VARCHAR(100) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS motos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                usuario_id INT NOT NULL,
+                placa VARCHAR(20) UNIQUE NOT NULL,
+                marca VARCHAR(50) NOT NULL,
+                modelo VARCHAR(50) NOT NULL,
+                kilometraje_actual INT NOT NULL DEFAULT 0,
+                fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+            )
+        `);
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS reglas_mantenimiento (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nombre_servicio VARCHAR(100) UNIQUE NOT NULL,
+                intervalo_km INT NOT NULL,
+                descripcion VARCHAR(255)
+            )
+        `);
+        await pool.query(`
+            INSERT IGNORE INTO reglas_mantenimiento (id, nombre_servicio, intervalo_km, descripcion) VALUES
+            (1, 'Cambio de Aceite', 3000, 'Sustituir aceite de motor y reemplazar filtro de aceite'),
+            (2, 'Revisión de Frenos', 6000, 'Revisar desgaste de pastillas, discos y líquido de frenos DOT4'),
+            (3, 'Filtro de Aire', 12000, 'Reemplazar filtro de aire para mezcla óptima'),
+            (4, 'Kit de Arrastre', 20000, 'Verificar tensión de cadena, lubricación y desgaste de piñones')
+        `);
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS historial_servicios (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                moto_id INT NOT NULL,
+                regla_id INT DEFAULT 1,
+                kilometraje_servicio INT NOT NULL,
+                observaciones VARCHAR(255),
+                fecha_servicio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (moto_id) REFERENCES motos(id) ON DELETE CASCADE
+            )
+        `);
+        console.log('Base de datos verificada y tablas listas.');
+    } catch (err) {
+        console.error('Error inicializando BD:', err.message);
+    }
+}
+initDB();
 
 // 2. Configuración de correos (Nodemailer)
 const transporter = nodemailer.createTransport({
@@ -39,12 +101,10 @@ app.post('/api/login', async (req, res) => {
     const { correo, password } = req.body;
 
     try {
-        // Validación quemada para el mecánico (puedes cambiar este correo y clave)
         if (correo === 'andres.quinonez.ortiz@gmail.com' && password === 'FelipeOrtiz4190') {
             return res.json({ status: 'success', role: 'mechanic', moto_id: null });
         }
 
-        // Si no es mecánico, buscamos al piloto en la base de datos
         const [users] = await pool.query(
             "SELECT id FROM usuarios WHERE correo = ? AND password = ?", 
             [correo, password]
@@ -52,7 +112,6 @@ app.post('/api/login', async (req, res) => {
 
         if (users.length > 0) {
             const usuarioId = users[0].id;
-            // Buscamos la moto vinculada a este piloto
             const [motos] = await pool.query("SELECT id FROM motos WHERE usuario_id = ?", [usuarioId]);
             const motoId = motos.length > 0 ? motos[0].id : null;
 
@@ -122,7 +181,6 @@ app.post('/api/actualizar-km', async (req, res) => {
         const vehiculo = rows[0];
         let alertas = [];
 
-        // Lógica de telemetría preventiva con tus textos exactos
         if (vehiculo.kilometraje_actual >= 3000) {
             alertas.push({ 
                 servicio: 'Cambio de Aceite', 
@@ -153,7 +211,6 @@ app.post('/api/actualizar-km', async (req, res) => {
         }
 
         if (alertas.length > 0) {
-            // Construir las tarjetas naranjas exactamente como tu plantilla original
             let tarjetasHtml = alertas.map(a => `
                 <div style="background-color: #fff6f0; border-left: 4px solid #ff6600; border-radius: 6px; padding: 15px 20px; margin-bottom: 15px;">
                     <h3 style="color: #d35400; margin: 0 0 10px 0; font-size: 16px;">${a.servicio}</h3>
@@ -202,6 +259,7 @@ app.post('/api/actualizar-km', async (req, res) => {
         res.status(500).json({ status: 'error', message: error.message });
     }
 });
+
 // 7. OBTENER HISTORIAL DE MANTENIMIENTO (BITÁCORA)
 app.get('/api/historial', async (req, res) => {
     const { moto_id } = req.query;
@@ -225,7 +283,6 @@ app.post('/api/registrar-servicio', async (req, res) => {
     }
 
     try {
-        // Guardamos el 'tipo_servicio' (texto) dentro de la columna 'observaciones' para respetar tu tabla SQL, y un regla_id genérico (1)
         await pool.query(
             "INSERT INTO historial_servicios (moto_id, regla_id, kilometraje_servicio, fecha_servicio, observaciones) VALUES (?, 1, ?, NOW(), ?)",
             [moto_id, kilometraje_servicio, tipo_servicio]
