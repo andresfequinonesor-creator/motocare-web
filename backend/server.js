@@ -212,7 +212,7 @@ app.post('/api/actualizar-km', async (req, res) => {
                     <div style="height: 6px; background-color: #ff6600;"></div>
                     <div style="padding: 30px;">
                         <h2 style="color: #111111; margin-top: 0; font-size: 22px;">Telemetría MotoCare: Alerta Mantenimiento</h2>
-                        <p style="color: #444444; font-size: 14px;">Estimado/a motociclista,</p>
+                        <p style="color: #444444; font-size: 14px;">Estimado/a <strong>${vehiculo.nombre}</strong>,</p>
                         <p style="color: #444444; font-size: 14px; line-height: 1.6;">
                             Tu vehículo con placa <strong>${vehiculo.placa}</strong> ha alcanzado un odómetro de 
                             <span style="background-color: #ff6600; color: #ffffff; padding: 4px 10px; border-radius: 4px; font-weight: bold; display: inline-block;">${vehiculo.kilometraje_actual} km</span>.
