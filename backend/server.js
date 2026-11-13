@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
-const nodemailer = require('nodemailer');
 const path = require('path');
 
 const app = express();
@@ -81,22 +80,11 @@ async function initDB() {
 }
 initDB();
 
-// 2. Configuración de correos (Nodemailer)
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
-
 // 
 // RUTAS DE LA API (BACKEND)
 // 
 
-// 3. LOGIN (Diferencia entre Mecánico y Piloto)
+// 2. LOGIN (Diferencia entre Mecánico y Piloto)
 app.post('/api/login', async (req, res) => {
     const { correo, password } = req.body;
 
@@ -124,7 +112,7 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// 4. REGISTRAR USUARIO Y MOTO
+// 3. REGISTRAR USUARIO Y MOTO
 app.post('/api/registrar', async (req, res) => {
     const { nombre, correo, password, placa, marca, modelo, kilometraje_inicial } = req.body;
     
@@ -149,7 +137,7 @@ app.post('/api/registrar', async (req, res) => {
     }
 });
 
-// 5. OBTENER LISTA DE VEHÍCULOS (Para el selector del taller)
+// 4. OBTENER LISTA DE VEHÍCULOS (Para el selector del taller)
 app.get('/api/vehiculos', async (req, res) => {
     try {
         const [vehiculos] = await pool.query(`
@@ -163,7 +151,7 @@ app.get('/api/vehiculos', async (req, res) => {
     }
 });
 
-// 6. ACTUALIZAR KILÓMETROS Y ENVIAR ALERTAS (CON DISEÑO ORIGINAL SIN EMOJIS)
+// 5. ACTUALIZAR KILÓMETROS Y ENVIAR ALERTAS VÍA BREVO API
 app.post('/api/actualizar-km', async (req, res) => {
     const { moto_id, km_a_sumar } = req.body;
 
@@ -246,12 +234,23 @@ app.post('/api/actualizar-km', async (req, res) => {
                 </div>
             `;
             
-            transporter.sendMail({
-                from: '"MotoCare Alertas" <motocare708@gmail.com>',
-                to: vehiculo.correo,
-                subject: `Telemetría MotoCare: Alerta Mantenimiento - Placa: ${vehiculo.placa}`,
-                html: correoHtml
-            }).catch(console.error);
+            fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json',
+                    'api-key': process.env.BREVO_API_KEY,
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sender: { name: 'MotoCare Alertas', email: 'andresfe.quinonesor@ecci.edu.co' },
+                    to: [{ email: vehiculo.correo }],
+                    subject: `Telemetría MotoCare: Alerta Mantenimiento - Placa: ${vehiculo.placa}`,
+                    htmlContent: correoHtml
+                })
+            })
+            .then(r => r.json())
+            .then(data => console.log('Respuesta correo Brevo:', data))
+            .catch(err => console.error('Error enviando correo:', err));
         }
         
         res.json({ status: 'success', kilometraje_actual: vehiculo.kilometraje_actual, alertas });
@@ -260,7 +259,7 @@ app.post('/api/actualizar-km', async (req, res) => {
     }
 });
 
-// 7. OBTENER HISTORIAL DE MANTENIMIENTO (BITÁCORA)
+// 6. OBTENER HISTORIAL DE MANTENIMIENTO (BITÁCORA)
 app.get('/api/historial', async (req, res) => {
     const { moto_id } = req.query;
     try {
@@ -274,7 +273,7 @@ app.get('/api/historial', async (req, res) => {
     }
 });
 
-// 8. REGISTRAR UN NUEVO SERVICIO EN EL TALLER
+// 7. REGISTRAR UN NUEVO SERVICIO EN EL TALLER
 app.post('/api/registrar-servicio', async (req, res) => {
     const { moto_id, pin_mecanico, tipo_servicio, kilometraje_servicio } = req.body;
     
@@ -293,7 +292,7 @@ app.post('/api/registrar-servicio', async (req, res) => {
     }
 });
 
-// 9. INICIAR EL SERVIDOR
+// 8. INICIAR EL SERVIDOR
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor de MotoCare corriendo en http://localhost:${PORT}`);
