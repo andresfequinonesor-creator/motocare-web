@@ -1,0 +1,72 @@
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background-color: #121212; 
+    background-image: radial-gradient(circle, #2b2b2b 10%, transparent 11%), radial-gradient(circle, #2b2b2b 10%, transparent 11%);
+    background-size: 20px 20px;
+    background-position: 0 0, 10px 10px;
+    color: #e0e0e0; 
+    padding: 20px; 
+    margin: 0;
+}
+
+.header { text-align: center; margin-bottom: 20px; }
+.logo { max-width: 120px; border-radius: 50%; box-shadow: 0 0 15px rgba(255, 102, 0, 0.5); margin-bottom: 10px; }
+h1 { color: #ff6600; text-transform: uppercase; margin: 0; letter-spacing: 2px;}
+.subtitle { color: #888; font-style: italic; margin-top: 5px; }
+h2 { color: #ffffff; border-bottom: 2px solid #ff6600; padding-bottom: 5px; }
+
+.container { 
+    max-width: 650px; 
+    margin: auto; 
+    background: #1e1e1e; 
+    padding: 25px; 
+    border-radius: 8px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
+    border-top: 5px solid #ff6600;
+}
+
+.odometro-panel {
+    background-color: #000;
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    margin-bottom: 25px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+}
+
+.odometro-valor {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 2.8em;
+    font-weight: bold;
+    color: #00ff00;
+    letter-spacing: 4px;
+    text-shadow: 0 0 8px rgba(0, 255, 0, 0.6);
+    margin: 5px 0 15px 0;
+}
+
+.odometro-label { color: #888; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; display: block; }
+.simador-controles { display: flex; gap: 10px; }
+.btn-simulador { flex: 1; background-color: #17a2b8; color: #fff; margin-top: 0; font-size: 0.85em; padding: 10px; box-shadow: 0 4px 10px rgba(23, 162, 184, 0.3); }
+.btn-simulador:hover { background-color: #138496; }
+.btn-salto { background-color: #ff9800; box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3); }
+.btn-salto:hover { background-color: #e68a00; }
+
+label { font-weight: bold; display: block; margin-top: 15px; font-size: 0.95em; color: #bbb; }
+input, select { 
+    width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #444; background-color: #2a2a2a; color: #fff; border-radius: 4px; box-sizing: border-box; font-size: 1em;
+}
+input:focus, select:focus { outline: none; border-color: #ff6600; }
+
+button { 
+    width: 100%; padding: 14px; background-color: #ff6600; color: #121212; border: none; margin-top: 25px; cursor: pointer; border-radius: 4px; font-weight: 900; font-size: 1.1em; text-transform: uppercase; letter-spacing: 1px; transition: background-color 0.3s;
+}
+button:hover { background-color: #cc5200; color: #fff; }
+
+.error { background-color: rgba(217, 83, 79, 0.2); border-left: 4px solid #d9534f; color: #ff9999; padding: 10px; font-size: 0.85em; display: none; margin-top: 10px; font-weight: bold; }
+.history-section { margin-top: 40px; padding-top: 10px; }
+.card { padding: 15px; margin-top: 15px; border-radius: 6px; font-size: 0.95em; box-shadow: 0 4px 6px rgba(0,0,0,0.3); color: #121212; }
+.status-normal { background-color: #81c784; border-left: 5px solid #2e7d32; }
+.status-pendiente { background-color: #ffd54f; border-left: 5px solid #ff8f00; }
+.status-vencido { background-color: #e57373; border-left: 5px solid #c62828; color: #fff;}
+.notification { background-color: #3949ab; color: #fff; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9em; text-align: center; border-left: 5px solid #1a237e; }
