@@ -6,7 +6,7 @@ Aplicación web para la gestión del mantenimiento preventivo de motocicletas, c
 
 ---
 
-## 👥 Equipo de Desarrollo
+##  Equipo de Desarrollo
 * **Andrés Felipe Quiñones Ortiz**
 * **Javier Santiago Espinel Barrero**
 * **Luis Daniel Corredor**
